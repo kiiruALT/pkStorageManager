@@ -91,11 +91,11 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0f0;color:var(--black);min-
 .btn-green{background:var(--green);color:white;}.btn-green:hover{background:#1e8449;}
 .btn-violet{background:var(--violet);color:white;}.btn-violet:hover{background:#7d3c98;}
 /* TABLE */
-.table-wrap{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;}
-.items-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.table-wrap{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:auto;-webkit-overflow-scrolling: touch;}
+.items-table{width:100%;border-collapse:collapse;font-size:13.5px; min-width: 850px;}
 .items-table th{background:var(--red);color:white;padding:12px 10px;text-align:left;font-weight:600;white-space:nowrap;}
 .items-table th.sortable-th:hover{background:var(--red-light)!important;color:white;}
-.items-table td{padding:10px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
+.items-table td{padding:10px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;white-space:nowrap;}
 .items-table tr:last-child td{border-bottom:none;}
 .items-table tr:hover td{background:#fef9f9;}
 .item-thumb{width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #eee;}
