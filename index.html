@@ -224,6 +224,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0f0;color:var(--black);min-
     </div>
     <div class="header-nav">
       <button class="nav-btn active" onclick="showPage('inventory',this)">📦 พัสดุ/ครุภัณฑ์</button>
+      <button class="nav-btn" onclick="showPage('chemical',this)">🧪 สารเคมี</button>
       <button class="nav-btn" onclick="showPage('office',this)">🗂️ สำนักงาน</button>
       <button class="nav-btn" onclick="showPage('borrow',this)">🔄 ยืม-คืน</button>
     </div>
@@ -243,7 +244,6 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0f0;color:var(--black);min-
       <option value="">ทุกประเภท</option>
       <option value="วัสดุ">วัสดุ</option>
       <option value="ครุภัณฑ์">ครุภัณฑ์</option>
-      <option value="สารเคมี">สารเคมี</option>
     </select>
     <select id="filter-status-inventory" onchange="renderTable('inventory')">
       <option value="">ทุกสถานะ</option>
@@ -438,6 +438,50 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0f0;color:var(--black);min-
   </div>
 </div>
 
+<!-- PAGE: CHEMICALS -->
+<div class="page active" id="page-chemical">
+  <div class="stats-grid" id="stats-grid-chemical"></div>
+  <div class="chart-wrap"><div class="chart-title">📊 สถิติสถานะพัสดุ/ครุภัณฑ์ (สารเคมี)</div><div id="bar-chart-chemical"></div></div>
+  <div class="toolbar">
+    <span class="section-title" style="margin-bottom:0">รายการทั้งหมด</span>
+    <input type="text" id="search-input-chemical" placeholder="🔍 ค้นหาชื่อ / รหัส..." style="flex:1;min-width:180px" oninput="renderTable('chemical')">
+    <select id="filter-status-chemical" onchange="renderTable('chemical')">
+      <option value="">ทุกสถานะ</option>
+      <option value="ใช้งานได้">ใช้งานได้</option>
+      <option value="ชำรุด">ชำรุด</option>
+      <option value="รอจำหน่าย">รอจำหน่าย</option>
+      <option value="จำหน่าย">จำหน่าย</option>
+      <option value="กำลังถูกยืม">กำลังถูกยืม</option>
+      <option value="เบิกแล้ว">เบิกแล้ว</option>
+      <option value="หมดแล้ว">หมดแล้ว</option>
+      <option value="ใกล้หมด">ใกล้หมด</option>
+    </select>
+    <button class="btn btn-red" onclick="openAddModal('chemical')">+ เพิ่มรายการ</button>
+    <button class="btn btn-outline" onclick="exportTablePDF('chemical')">📄 PDF</button>
+    <button class="btn btn-outline" onclick="exportCSV('chemical')" style="color:#27AE60;border-color:#27AE60">📊 CSV</button>
+    <div class="col-count-wrap"><label>แสดง</label><input type="number" id="col-count-chemical" min="1" max="50" value="10" onchange="renderTable('chemical')"><label>/ หน้า</label></div>
+  </div>
+  <div id="pagination-wrap-chemical" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap"></div>
+  <div class="table-wrap">
+    <table class="items-table">
+      <thead><tr>
+        <th>รูป</th>
+        <th class="sortable-th" onclick="sortItems('chemical','name')">ชื่อรายการ <span class="sort-icon" id="isort-chemical-name">↕</span></th>
+        <th class="sortable-th" onclick="sortItems('chemical','code')">รหัส <span class="sort-icon" id="isort-chemical-code">↕</span></th>
+        <th class="sortable-th" onclick="sortItems('chemical','type')">ประเภท <span class="sort-icon" id="isort-chemical-type">↕</span></th>
+        <th class="sortable-th" onclick="sortItems('chemical','qty')">จำนวน <span class="sort-icon" id="isort-chemical-qty">↕</span></th>
+        <th class="sortable-th" onclick="sortItems('chemical','price')">ราคา (บ.) <span class="sort-icon" id="isort-chemical-price">↕</span></th>
+        <th class="sortable-th" onclick="sortItems('chemical','location')">สถานที่ <span class="sort-icon" id="isort-chemical-location">↕</span></th>
+        <th class="sortable-th" onclick="sortItems('chemical','owner')">ผู้รับผิดชอบ <span class="sort-icon" id="isort-chemical-owner">↕</span></th>
+        <th class="sortable-th" onclick="sortItems('chemical','status')">สถานะ <span class="sort-icon" id="isort-chemical-status">↕</span></th>
+        <th>จัดการ</th>
+      </tr></thead>
+      <tbody id="items-tbody-chemical"></tbody>
+    </table>
+    <div id="empty-chemical" class="empty-state" style="display:none"><div class="emoji">🧪</div><p>ยังไม่มีรายการสารเคมี<br>กดปุ่ม "+ เพิ่มรายการ" เพื่อเริ่มต้น</p></div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <!-- ADD/EDIT MODAL -->
@@ -471,7 +515,16 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0f0;color:var(--black);min-
           <label>หน่วยนับ <span class="req">*</span></label>
           <div class="unit-row">
             <select id="item-unit-select" onchange="unitSelectChange()">
-              <option value="เครื่อง">เครื่อง</option><option value="อัน">อัน</option><option value="ตัว">ตัว</option><option value="ขวด">ขวด</option><option value="ใบ">ใบ</option><option value="other">อื่นๆ (ระบุ)</option>
+                <option value="ขวด">ขวด</option>
+                <option value="กรัม">กรัม</option>
+                <option value="กิโลกรัม">กิโลกรัม</option>
+                <option value="มิลลิลิตร">มิลลิลิตร</option>
+                <option value="ลิตร">ลิตร</option>
+                <option value="เครื่อง">เครื่อง</option>
+                <option value="อัน">อัน</option>
+                <option value="ตัว">ตัว</option>
+                <option value="ใบ">ใบ</option>
+                <option value="other">อื่นๆ (ระบุ)</option>
             </select>
             <input type="text" id="item-unit-other" placeholder="ระบุหน่วย...">
           </div>
@@ -508,15 +561,31 @@ body{font-family:'Sarabun',sans-serif;background:#f0f0f0;color:var(--black);min-
 
 <script>
 // ===== GLOBALS =====
-let items=[]; let officeItems=[]; let borrows=[];
-let editingId=null; let currentModalTab='inventory';
-let currentImgData=null; let borrowImgData=null; let returnImgData=null;
-let statusMenuTargetId=null; let statusMenuTab=null;
-let currentTransactionType='borrow';
-const sortState={inventory:{col:null,asc:true,page:1},office:{col:null,asc:true,page:1}};
-let borrowSortCol=null; let borrowSortAsc=true;
-let fbReady=false;
-let _unsubItems=null,_unsubOffice=null,_unsubBorrows=null;
+let items = []; 
+let officeItems = []; 
+let chemicalItems = [];
+let borrows = []; 
+let editingId = null; 
+let currentModalTab = 'inventory';
+let currentImgData = null; 
+let borrowImgData = null; 
+let returnImgData = null; 
+let statusMenuTargetId = null; 
+let statusMenuTab = null;
+let currentTransactionType = 'borrow';
+
+const sortState = {
+  inventory: { col: null, asc: true, page: 1 },
+  office:    { col: null, asc: true, page: 1 },
+  chemical:  { col: null, asc: true, page: 1 }
+};
+
+let borrowSortCol = null; 
+let borrowSortAsc = true;
+let fbReady = false;
+
+// Realtime Firebase snapshot listeners
+let _unsubItems = null, _unsubOffice = null, _unsubChemical = null, _unsubBorrows = null;
 
 // ===== SYNC STATUS =====
 function setSyncStatus(state){
@@ -627,6 +696,16 @@ function subscribeAll(){
     }
   });
 
+  if(_unsubChemical)_unsubChemical();
+  _unsubChemical=fb.onSnapshot(fb.collection(fb.firestore,'chemicalItems'),async function(snap){
+    var arr=snap.docs.map(function(d){return d.data();});
+    chemicalItems=await resolveImgs(arr);
+    checkAutoDispose();
+    if(!statusMenuTargetId){
+      renderStats('chemical'); renderTable('chemical');
+    }
+  });
+
   if(_unsubBorrows)_unsubBorrows();
   _unsubBorrows=fb.onSnapshot(fb.collection(fb.firestore,'borrows'),async function(snap){
     var arr=snap.docs.map(function(d){return d.data();});
@@ -638,32 +717,47 @@ function subscribeAll(){
   });
 }
 
-// ===== SAVE DATA (called everywhere) =====
+/// ===== SAVE DATA (Firebase Helpers) =====
 async function saveData(){
-  // Items and officeItems are saved individually in saveItem/deleteItem
-  // Borrows saved in submitBorrow/submitReturn
-  // This is a no-op now since we save per-document
+  // Items, officeItems, and chemicalItems are saved individually per-document
+}
+
+// Maps tab name to corresponding Firestore collection
+function getCollectionName(tab) {
+  if (tab === 'office') return 'officeItems';
+  if (tab === 'chemical') return 'chemicalItems';
+  return 'items'; // Default inventory collection
 }
 
 async function saveItem_fb(item, tab){
-  var col=tab==='office'?'officeItems':'items';
+  var col = getCollectionName(tab);
   await fbSave(col, item);
 }
+
 async function deletItem_fb(id, tab){
-  var col=tab==='office'?'officeItems':'items';
+  var col = getCollectionName(tab);
   await fbDelete(col, id);
 }
+
 async function saveBorrow_fb(record){
   await fbSave('borrows', record);
 }
+
 async function updateBorrow_fb(record){
   await fbSave('borrows', record);
 }
+
 async function saveItem_field(id, tab, fields){
-  // partial update — just resave the full item
-  var src=tab==='office'?officeItems:items;
-  var item=src.find(function(i){return i.id===id;});
-  if(item)await saveItem_fb(item,tab);
+  // Partial update — locate item in correct array and save
+  var src = items;
+  if (tab === 'office') src = officeItems;
+  else if (tab === 'chemical') src = chemicalItems;
+
+  var item = src.find(function(i){ return i.id === id; });
+  if (item) {
+    if (fields) Object.assign(item, fields);
+    await saveItem_fb(item, tab);
+  }
 }
 
 // ===== LOGO =====
@@ -727,25 +821,30 @@ function thaiSort(a,b){
   return String(a||'').localeCompare(String(b||''),'th',{numeric:true});
 }
 
-// ===== AUTO DISPOSE =====
+// ===== AUTO DISPOSE & STATUS CHECK =====
 function checkAutoDispose(){
-  var today=new Date().toISOString().split('T')[0];
-  [...items,...officeItems].forEach(function(it){ 
+  var today = new Date().toISOString().split('T')[0];
+  var allItems = [...items, ...officeItems, ...(window.chemicalItems || [])];
+
+  allItems.forEach(function(it){ 
     var oldStatus = it.status;
-    var q = parseInt(it.qty);
+    var q = parseInt(it.qty) || 0;
 
     if (it.disposeDate && it.disposeDate <= today && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
       it.status = 'จำหน่าย';
-    } else if (it.qty === 1 && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
+    } else if (q === 1 && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
       it.status = 'ใกล้หมด';
-    } else if (it.qty === 0 && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
+    } else if (q === 0 && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
       it.status = 'หมดแล้ว';
-    } else if (it.qty > 1 && (it.status !== 'หมดแล้ว' || it.status !== 'ใกล้หมด')) {
+    } else if (q > 1 && (it.status === 'หมดแล้ว' || it.status === 'ใกล้หมด')) {
       it.status = 'ใช้งานได้';
     }
 
     if (oldStatus !== it.status) {
-      var tab = items.includes(it) ? 'inventory' : 'office';
+      var tab = 'inventory';
+      if (officeItems.includes(it)) tab = 'office';
+      else if (window.chemicalItems && chemicalItems.includes(it)) tab = 'chemical';
+
       saveItem_fb(it, tab);
     }
   });
@@ -759,6 +858,7 @@ function showPage(page,btn){
   if(btn)btn.classList.add('active');
   if(page==='borrow'){populateBorrowDropdowns();renderBorrowHistory();}
   if(page==='office'){renderStats('office');renderTable('office');}
+  if(page==='chemical'){renderStats('chemical');renderTable('chemical');}
 }
 
 // ===== STATUS BADGE =====
@@ -792,29 +892,49 @@ function getStatusBadge(status,tab,qty){
 
 // ===== STATS & CHART =====
 function renderStats(tab){
-  var src=tab==='office'?officeItems:items;
-  var statuses=[
-    {key:'ใช้งานได้',label:'ใช้งานได้',color:'#27AE60'},
-    {key:'ชำรุด',label:'ชำรุด',color:'#E74C3C'},
-    {key:'รอจำหน่าย',label:'รอจำหน่าย',color:'#aaa'},
-    {key:'จำหน่าย',label:'จำหน่าย',color:'#666'},
-    {key:'กำลังถูกยืม',label:'กำลังถูกยืม',color:'#2980B9'},
+  // 1. Data Source Selection
+  var src = items;
+  if (tab === 'office') src = officeItems;
+  else if (tab === 'chemical') src = chemicalItems;
+
+  var statuses = [
+    { key: 'ใช้งานได้', label: 'ใช้งานได้', color: '#27AE60' },
+    { key: 'ชำรุด', label: 'ชำรุด', color: '#E74C3C' },
+    { key: 'รอจำหน่าย', label: 'รอจำหน่าย', color: '#E67E22' },
+    { key: 'จำหน่าย', label: 'จำหน่าย', color: '#666666' },
+    { key: 'กำลังถูกยืม', label: 'กำลังถูกยืม', color: '#2980B9' },
+    { key: 'เบิกแล้ว', label: 'เบิกแล้ว', color: '#8E44AD' },
+    { key: 'ใกล้หมด', label: 'ใกล้หมด', color: '#D35400' },
+    { key: 'หมดแล้ว', label: 'หมดแล้ว', color: '#C0392B' }
   ];
-  var total=src.length;
-  var grid='<div class="stat-card" style="--color:#860001"><div class="stat-num">'+total+'</div><div class="stat-label">รายการทั้งหมด</div></div>';
-  statuses.forEach(function(s){
-    var cnt=src.filter(function(i){return i.status===s.key;}).length;
-    grid+='<div class="stat-card" style="--color:'+s.color+'"><div class="stat-num">'+cnt+'</div><div class="stat-label">'+s.label+'</div></div>';
-  });
-  document.getElementById('stats-grid-'+tab).innerHTML=grid;
-  var max=Math.max(total,1);
-  var bars='<div class="bar-row"><div class="bar-label">รวมทั้งหมด</div><div class="bar-track"><div class="bar-fill" style="--color:#860001;width:100%">'+total+'</div></div><div class="bar-count">'+total+'</div></div>';
-  statuses.forEach(function(s){
-    var cnt=src.filter(function(i){return i.status===s.key;}).length;
-    var pct=(cnt/max*100).toFixed(1);
-    bars+='<div class="bar-row"><div class="bar-label">'+s.label+'</div><div class="bar-track"><div class="bar-fill" style="--color:'+s.color+';width:'+pct+'%">'+(cnt>0?cnt:'')+'</div></div><div class="bar-count">'+cnt+'</div></div>';
-  });
-  document.getElementById('bar-chart-'+tab).innerHTML=bars;
+
+  var total = src.length;
+
+  // 2. Render Stat Cards Grid
+  var gridEl = document.getElementById('stats-grid-' + tab);
+  if (gridEl) {
+    var grid = '<div class="stat-card" style="--color:#860001"><div class="stat-num">' + total + '</div><div class="stat-label">รายการทั้งหมด</div></div>';
+    statuses.forEach(function(s){
+      var cnt = src.filter(function(i){ return i.status === s.key; }).length;
+      grid += '<div class="stat-card" style="--color:' + s.color + '"><div class="stat-num">' + cnt + '</div><div class="stat-label">' + s.label + '</div></div>';
+    });
+    gridEl.innerHTML = grid;
+  }
+
+  // 3. Render Bar Chart
+  var chartEl = document.getElementById('bar-chart-' + tab);
+  if (chartEl) {
+    var max = Math.max(total, 1);
+    var bars = '<div class="bar-row"><div class="bar-label">รวมทั้งหมด</div><div class="bar-track"><div class="bar-fill" style="--color:#860001;width:100%">' + total + '</div></div><div class="bar-count">' + total + '</div></div>';
+    
+    statuses.forEach(function(s){
+      var cnt = src.filter(function(i){ return i.status === s.key; }).length;
+      var pct = (cnt / max * 100).toFixed(1);
+      bars += '<div class="bar-row"><div class="bar-label">' + s.label + '</div><div class="bar-track"><div class="bar-fill" style="--color:' + s.color + ';width:' + pct + '%">' + (cnt > 0 ? cnt : '') + '</div></div><div class="bar-count">' + cnt + '</div></div>';
+    });
+    
+    chartEl.innerHTML = bars;
+  }
 }
 
 // ===== SORT ITEMS =====
@@ -825,82 +945,112 @@ function gotoPage(tab,p){sortState[tab].page=p;renderTable(tab);}
 
 // ===== RENDER TABLE =====
 function renderTable(tab){
-  var src=tab==='office'?officeItems:items;
-  var searchEl=document.getElementById('search-input-'+tab);
-  var search=searchEl?searchEl.value.toLowerCase():'';
-  var statEl=document.getElementById('filter-status-'+tab);
-  var statF=statEl?statEl.value:'';
-  var typeEl=document.getElementById('filter-type-inventory');
-  var typeF=(tab==='inventory'&&typeEl)?typeEl.value:'';
-  var colEl=document.getElementById('col-count-'+tab);
-  var colCount=Math.max(1,Math.min(50,parseInt(colEl?colEl.value:10)||10));
-  var s=sortState[tab];
+  // 1. Data Source Selection
+  var src = items;
+  if (tab === 'office') src = officeItems;
+  else if (tab === 'chemical') src = chemicalItems; // Added chemical source
 
-  var filtered=src.filter(function(it){
-    var ms=!search||it.name.toLowerCase().includes(search)||it.code.toLowerCase().includes(search);
-    var mt=!typeF||it.type===typeF;
-    var msv=!statF||it.status===statF;
-    return ms&&mt&&msv;
+  var searchEl = document.getElementById('search-input-' + tab);
+  var search = searchEl ? searchEl.value.toLowerCase() : '';
+  var statEl = document.getElementById('filter-status-' + tab);
+  var statF = statEl ? statEl.value : '';
+  var typeEl = document.getElementById('filter-type-' + tab); // Updated to dynamically target tab type filter
+  var typeF = typeEl ? typeEl.value : '';
+  var colEl = document.getElementById('col-count-' + tab);
+  var colCount = Math.max(1, Math.min(50, parseInt(colEl ? colEl.value : 10) || 10));
+  var s = sortState[tab] || { col: null, asc: true, page: 1 };
+
+  // 2. Filtering Logic
+  var filtered = src.filter(function(it){
+    var ms = !search || it.name.toLowerCase().includes(search) || it.code.toLowerCase().includes(search);
+    var mt = !typeF || it.type === typeF;
+    var msv = !statF || it.status === statF;
+    return ms && mt && msv;
   });
 
-  var cols=tab==='office'?['name','code','qty','price','location','owner','status']:['name','code','type','qty','price','location','owner','status'];
+  // 3. Header Sorting Icons
+  var cols = tab === 'office' 
+    ? ['name','code','qty','price','location','owner','status']
+    : ['name','code','type','qty','price','location','owner','status'];
+
   cols.forEach(function(k){
-    var el=document.getElementById('isort-'+tab+'-'+k);
-    if(!el)return;
-    el.textContent=s.col===k?(s.asc?'↑':'↓'):'↕';
-    el.className='sort-icon'+(s.col===k?' active':'');
+    var el = document.getElementById('isort-' + tab + '-' + k);
+    if (!el) return;
+    el.textContent = s.col === k ? (s.asc ? '↑' : '↓') : '↕';
+    el.className = 'sort-icon' + (s.col === k ? ' active' : '');
   });
 
-  if(s.col){filtered.sort(function(a,b){var r=thaiSort(a[s.col]||'',b[s.col]||'');return s.asc?r:-r;});}
-
-  var tbody=document.getElementById('items-tbody-'+tab);
-  var paginWrap=document.getElementById('pagination-wrap-'+tab);
-  var emptyEl=document.getElementById('empty-'+tab);
-
-  if(filtered.length===0){tbody.innerHTML='';if(paginWrap)paginWrap.innerHTML='';if(emptyEl)emptyEl.style.display='block';return;}
-  if(emptyEl)emptyEl.style.display='none';
-
-  var totalPages=Math.ceil(filtered.length/colCount);
-  if(s.page>totalPages)s.page=totalPages;
-  var start=(s.page-1)*colCount;
-  var pageItems=filtered.slice(start,start+colCount);
-
-  if(paginWrap){
-    var info='<span style="font-size:13px;color:#666">แสดง '+(start+1)+'–'+Math.min(start+colCount,filtered.length)+' จาก '+filtered.length+' รายการ</span>';
-    var btns='';
-    for(var p=1;p<=totalPages;p++){
-      var act=p===s.page?'background:var(--red);color:white;border-color:var(--red)':'';
-      btns+='<button onclick="gotoPage(\''+tab+'\','+p+')" style="padding:5px 10px;border:1.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;'+act+'">'+p+'</button>';
-    }
-    paginWrap.innerHTML=info+(totalPages>1?'<div style="display:flex;gap:4px;flex-wrap:wrap">'+btns+'</div>':'');
+  if (s.col) {
+    filtered.sort(function(a, b){
+      var r = thaiSort(a[s.col] || '', b[s.col] || '');
+      return s.asc ? r : -r;
+    });
   }
 
-  tbody.innerHTML=pageItems.map(function(it){
-    var typeCol=tab==='office'?'<td>สำนักงาน</td>':'<td>'+it.type+'</td>';
-    var imgEl=it.img?'<img src="'+it.img+'" class="item-thumb" style="cursor:pointer" onclick="showItemImg(\''+it.id+'\',\''+tab+'\')">':'<div class="item-thumb-placeholder">📦</div>';
-    return '<tr data-id="'+it.id+'" data-tab="'+tab+'">'
-      +'<td>'+imgEl+'</td>'
-      +'<td><strong>'+it.name+'</strong></td>'
-      +'<td><code style="background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:12px">'+it.code+'</code></td>'
-      +typeCol
-      +'<td>'+it.qty+' '+it.unit+'</td>'
-      +'<td>'+(it.price?Number(it.price).toLocaleString('th-TH',{minimumFractionDigits:2}):'-')+'</td>'
-      +'<td>'+(it.location||'-')+'</td>'
-      +'<td>'+(it.owner||'-')+'</td>'
-      +'<td><div class="status-dropdown-wrap" id="sdw-'+it.id+'">'+getStatusBadge(it.status,tab,it.qty)+'</div></td>'
-      +'<td>'
-        +'<button class="action-btn action-edit" title="แก้ไข" onclick="openEditModal(\''+it.id+'\',\''+tab+'\')">✏️</button>'
-        +'<button class="action-btn action-delete" title="ลบ" onclick="deleteItem(\''+it.id+'\',\''+tab+'\')">🗑</button>'
-      +'</td></tr>';
+  // 4. Pagination & UI Elements
+  var tbody = document.getElementById('items-tbody-' + tab);
+  var paginWrap = document.getElementById('pagination-wrap-' + tab);
+  var emptyEl = document.getElementById('empty-' + tab);
+
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    if (paginWrap) paginWrap.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  var totalPages = Math.ceil(filtered.length / colCount);
+  if (s.page > totalPages) s.page = totalPages;
+  var start = (s.page - 1) * colCount;
+  var pageItems = filtered.slice(start, start + colCount);
+
+  if (paginWrap) {
+    var info = '<span style="font-size:13px;color:#666">แสดง ' + (start + 1) + '–' + Math.min(start + colCount, filtered.length) + ' จาก ' + filtered.length + ' รายการ</span>';
+    var btns = '';
+    for (var p = 1; p <= totalPages; p++) {
+      var act = p === s.page ? 'background:var(--red);color:white;border-color:var(--red)' : '';
+      btns += '<button onclick="gotoPage(\'' + tab + '\',' + p + ')" style="padding:5px 10px;border:1.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;' + act + '">' + p + '</button>';
+    }
+    paginWrap.innerHTML = info + (totalPages > 1 ? '<div style="display:flex;gap:4px;flex-wrap:wrap">' + btns + '</div>' : '');
+  }
+
+  // 5. Render Table Rows
+  tbody.innerHTML = pageItems.map(function(it){
+    var typeCol = tab === 'office' ? '<td>สำนักงาน</td>' : '<td>' + (it.type || '-') + '</td>';
+    var imgEl = it.img 
+      ? '<img src="' + it.img + '" class="item-thumb" style="cursor:pointer" onclick="showItemImg(\'' + it.id + '\',\'' + tab + '\')">'
+      : '<div class="item-thumb-placeholder">📦</div>';
+
+    return '<tr data-id="' + it.id + '" data-tab="' + tab + '">'
+      + '<td>' + imgEl + '</td>'
+      + '<td><strong>' + it.name + '</strong></td>'
+      + '<td><code style="background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:12px">' + it.code + '</code></td>'
+      + typeCol
+      + '<td>' + it.qty + ' ' + (it.unit || '') + '</td>'
+      + '<td>' + (it.price ? Number(it.price).toLocaleString('th-TH', {minimumFractionDigits: 2}) : '-') + '</td>'
+      + '<td>' + (it.location || '-') + '</td>'
+      + '<td>' + (it.owner || '-') + '</td>'
+      + '<td><div class="status-dropdown-wrap" id="sdw-' + it.id + '">' + getStatusBadge(it.status, tab, it.qty) + '</div></td>'
+      + '<td>'
+        + '<button class="action-btn action-edit" title="แก้ไข" onclick="openEditModal(\'' + it.id + '\',\'' + tab + '\')">✏️</button>'
+        + '<button class="action-btn action-delete" title="ลบ" onclick="deleteItem(\'' + it.id + '\',\'' + tab + '\')">🗑</button>'
+      + '</td></tr>';
   }).join('');
 }
 
-function showItemImg(id,tab){
-  var src=tab==='office'?officeItems:items;
-  var it=src.find(function(i){return i.id===id;});
-  if(!it||!it.img)return;
-  document.getElementById('img-popup-img').src=it.img;
-  document.getElementById('img-popup-label').textContent=it.name;
+function showItemImg(id, tab){
+  var src = items;
+  if (tab === 'office') src = officeItems;
+  else if (tab === 'chemical') src = chemicalItems;
+
+  var it = src.find(function(i){ return i.id === id; });
+  if (!it || !it.img) return;
+  
+  document.getElementById('img-popup-img').src = it.img;
+  document.getElementById('img-popup-label').textContent = it.name;
   document.getElementById('img-popup').classList.add('open');
 }
 
@@ -950,83 +1100,178 @@ function openStatusMenu(e,currentStatus,tab){
 }
 
 function setStatus(newStatus){
-  var menu=document.getElementById('global-status-menu');
+  var menu = document.getElementById('global-status-menu');
   menu.classList.remove('open');
+  
   // Read id from variable OR dataset — dataset survives Firebase onSnapshot re-render
-  var id=statusMenuTargetId||menu.dataset.targetId;
-  statusMenuTargetId=null; statusMenuTab=null;
-  if(!id){toast('ไม่พบรายการ','error');return;}
-  // Always search both arrays by id (onSnapshot replaces array refs so we must search fresh)
-  var item=items.find(function(i){return i.id===id;});
-  var tab='inventory';
-  if(!item){item=officeItems.find(function(i){return i.id===id;});tab='office';}
-  if(!item){toast('ไม่พบรายการ — โปรดรีเฟรช','error');return;}
-  item.status=newStatus;
-  renderStats(tab); renderTable(tab);
-  saveItem_fb(item,tab);
-  toast('เปลี่ยนสถานะเป็น "'+newStatus+'" แล้ว','success');
+  var id = statusMenuTargetId || menu.dataset.targetId;
+  statusMenuTargetId = null; 
+  statusMenuTab = null;
+  
+  if (!id) {
+    toast('ไม่พบรายการ', 'error');
+    return;
+  }
+  
+  // Search all three arrays by id to detect the correct tab dynamically
+  var item = items.find(function(i){ return i.id === id; });
+  var tab = 'inventory';
+  
+  if (!item) {
+    item = officeItems.find(function(i){ return i.id === id; });
+    tab = 'office';
+  }
+  
+  if (!item) {
+    item = (window.chemicalItems || []).find(function(i){ return i.id === id; });
+    tab = 'chemical';
+  }
+  
+  if (!item) {
+    toast('ไม่พบรายการ — โปรดรีเฟรช', 'error');
+    return;
+  }
+  
+  item.status = newStatus;
+  
+  if (typeof renderStats === 'function') renderStats(tab);
+  renderTable(tab);
+  saveItem_fb(item, tab);
+  
+  toast('เปลี่ยนสถานะเป็น "' + newStatus + '" แล้ว', 'success');
 }
 
-document.addEventListener('click',function(e){
-  var menu=document.getElementById('global-status-menu');
-  if(menu.classList.contains('open')&&!menu.contains(e.target)&&!e.target.closest('.status-badge')){
+document.addEventListener('click', function(e){
+  var menu = document.getElementById('global-status-menu');
+  if (menu && menu.classList.contains('open') && !menu.contains(e.target) && !e.target.closest('.status-badge')) {
     menu.classList.remove('open');
   }
-},true);
+}, true);
 
 // ===== MODAL =====
 function openAddModal(tab){
-  currentModalTab=tab||'inventory';
-  editingId=null; currentImgData=null;
-  document.getElementById('modal-title').textContent='เพิ่มรายการ'+(tab==='office'?'สำนักงาน':'พัสดุ/ครุภัณฑ์');
+  currentModalTab = tab || 'inventory';
+  editingId = null; 
+  currentImgData = null;
+  
+  var titleText = 'เพิ่มรายการพัสดุ/ครุภัณฑ์';
+  if (tab === 'office') titleText = 'เพิ่มรายการสำนักงาน';
+  else if (tab === 'chemical') titleText = 'เพิ่มรายการสารเคมี';
+  
+  document.getElementById('modal-title').textContent = titleText;
   clearForm(currentModalTab);
   document.getElementById('item-modal').classList.add('open');
 }
-function openEditModal(id,tab){
-  currentModalTab=tab||'inventory';
-  var src=tab==='office'?officeItems:items;
-  var it=src.find(function(i){return i.id===id;});
-  if(!it)return;
-  editingId=id; currentImgData=it.img||null;
-  document.getElementById('modal-title').textContent='แก้ไขรายการ';
-  document.getElementById('item-name').value=it.name;
-  document.getElementById('item-code').value=it.code;
-  if(tab==='office'){document.getElementById('item-type').value='สำนักงาน';}else{document.getElementById('item-type').value=it.type;}
-  document.getElementById('item-qty').value=it.qty;
-  var units=['เครื่อง','อัน','ตัว','ขวด','ใบ'];
-  var sel=document.getElementById('item-unit-select');var oth=document.getElementById('item-unit-other');
-  if(units.includes(it.unit)){sel.value=it.unit;oth.style.display='none';}else{sel.value='other';oth.style.display='block';oth.value=it.unit;}
-  document.getElementById('item-price').value=it.price||'';
-  document.getElementById('item-budget').value=it.budget||'อุดหนุน';
-  document.getElementById('item-receive-date').value=it.receiveDate||'';
-  document.getElementById('item-dispose-date').value=it.disposeDate||'';
-  document.getElementById('item-location').value=it.location||'';
-  document.getElementById('item-owner').value=it.owner||'';
-  var ph=document.getElementById('main-img-placeholder');
-  ph.innerHTML=it.img?'<img src="'+it.img+'" class="img-preview">':'<div class="img-placeholder">📷</div><div class="img-text">คลิกเพื่ออัปโหลดรูปภาพ</div>';
-  document.getElementById('item-type').disabled=(tab==='office');
+
+function openEditModal(id, tab){
+  currentModalTab = tab || 'inventory';
+  
+  var src = items;
+  if (tab === 'office') src = officeItems;
+  else if (tab === 'chemical') src = chemicalItems;
+  
+  var it = src.find(function(i){ return i.id === id; });
+  if (!it) return;
+  
+  editingId = id; 
+  currentImgData = it.img || null;
+  
+  document.getElementById('modal-title').textContent = 'แก้ไขรายการ';
+  document.getElementById('item-name').value = it.name;
+  document.getElementById('item-code').value = it.code;
+  
+  var typeSelect = document.getElementById('item-type');
+  if (tab === 'office') {
+    typeSelect.value = 'สำนักงาน';
+  } else if (tab === 'chemical') {
+    typeSelect.value = 'สารเคมี';
+  } else {
+    typeSelect.value = it.type;
+  }
+  
+  document.getElementById('item-qty').value = it.qty;
+  
+  // Expanded unit list to include chemical options
+  var units = ['เครื่อง', 'อัน', 'ตัว', 'ขวด', 'ใบ', 'กรัม', 'กิโลกรัม', 'มิลลิลิตร', 'ลิตร'];
+  var sel = document.getElementById('item-unit-select');
+  var oth = document.getElementById('item-unit-other');
+  
+  if (units.includes(it.unit)) {
+    sel.value = it.unit;
+    oth.style.display = 'none';
+  } else {
+    sel.value = 'other';
+    oth.style.display = 'block';
+    oth.value = it.unit;
+  }
+  
+  document.getElementById('item-price').value = it.price || '';
+  document.getElementById('item-budget').value = it.budget || 'อุดหนุน';
+  document.getElementById('item-receive-date').value = it.receiveDate || '';
+  document.getElementById('item-dispose-date').value = it.disposeDate || '';
+  document.getElementById('item-location').value = it.location || '';
+  document.getElementById('item-owner').value = it.owner || '';
+  
+  var ph = document.getElementById('main-img-placeholder');
+  ph.innerHTML = it.img 
+    ? '<img src="' + it.img + '" class="img-preview">' 
+    : '<div class="img-placeholder">📷</div><div class="img-text">คลิกเพื่ออัปโหลดรูปภาพ</div>';
+    
+  // Lock type dropdown if tab is office or chemical
+  typeSelect.disabled = (tab === 'office' || tab === 'chemical');
   document.getElementById('item-modal').classList.add('open');
 }
 function clearForm(tab){
-  ['item-name','item-code','item-price','item-receive-date','item-dispose-date','item-location','item-owner'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('item-qty').value=1;
-  var typeEl=document.getElementById('item-type');
-  if(tab==='office'){typeEl.value='สำนักงาน';typeEl.disabled=true;}else{typeEl.value='วัสดุ';typeEl.disabled=false;}
-  document.getElementById('item-budget').value='อุดหนุน';
-  document.getElementById('item-unit-select').value='เครื่อง';
-  document.getElementById('item-unit-other').style.display='none';
-  document.getElementById('item-unit-other').value='';
-  document.getElementById('main-img-placeholder').innerHTML='<div class="img-placeholder">📷</div><div class="img-text">คลิกเพื่ออัปโหลดรูปภาพ</div>';
-  currentImgData=null;
-  var codeEl=document.getElementById('item-code');if(codeEl){codeEl.style.borderColor='';codeEl.style.boxShadow='';}
-  var dupMsg=document.getElementById('code-dup-msg');if(dupMsg)dupMsg.style.display='none';
+  ['item-name','item-code','item-price','item-receive-date','item-dispose-date','item-location','item-owner'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  
+  document.getElementById('item-qty').value = 1;
+  var typeEl = document.getElementById('item-type');
+  
+  if (tab === 'office') {
+    typeEl.value = 'สำนักงาน';
+    typeEl.disabled = true;
+  } else if (tab === 'chemical') {
+    typeEl.value = 'สารเคมี';
+    typeEl.disabled = true;
+  } else {
+    typeEl.value = 'วัสดุ';
+    typeEl.disabled = false;
+  }
+  
+  document.getElementById('item-budget').value = 'อุดหนุน';
+  document.getElementById('item-unit-select').value = (tab === 'chemical') ? 'ขวด' : 'เครื่อง';
+  document.getElementById('item-unit-other').style.display = 'none';
+  document.getElementById('item-unit-other').value = '';
+  document.getElementById('main-img-placeholder').innerHTML = '<div class="img-placeholder">📷</div><div class="img-text">คลิกเพื่ออัปโหลดรูปภาพ</div>';
+  
+  currentImgData = null;
+  var codeEl = document.getElementById('item-code');
+  if (codeEl) { codeEl.style.borderColor = ''; codeEl.style.boxShadow = ''; }
+  var dupMsg = document.getElementById('code-dup-msg');
+  if (dupMsg) dupMsg.style.display = 'none';
 }
-function closeModal(){document.getElementById('item-modal').classList.remove('open');clearForm(currentModalTab);}
-function unitSelectChange(){var sel=document.getElementById('item-unit-select').value;document.getElementById('item-unit-other').style.display=sel==='other'?'block':'none';}
+
+function closeModal(){
+  document.getElementById('item-modal').classList.remove('open');
+  clearForm(currentModalTab);
+}
+
+function unitSelectChange(){
+  var sel = document.getElementById('item-unit-select').value;
+  document.getElementById('item-unit-other').style.display = (sel === 'other') ? 'block' : 'none';
+}
+
 function handleMainImg(e){
-  var file=e.target.files[0];if(!file)return;
-  var reader=new FileReader();
-  reader.onload=async function(ev){currentImgData=await compressImage(ev.target.result,480,0.65);document.getElementById('main-img-placeholder').innerHTML='<img src="'+currentImgData+'" class="img-preview">';};
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = async function(ev){
+    currentImgData = await compressImage(ev.target.result, 480, 0.65);
+    document.getElementById('main-img-placeholder').innerHTML = '<img src="' + currentImgData + '" class="img-preview">';
+  };
   reader.readAsDataURL(file);
 }
 
@@ -1042,46 +1287,88 @@ function checkCodeDup(el){
 
 // ===== SAVE ITEM =====
 async function saveItem(){
-  var name=document.getElementById('item-name').value.trim();
-  var code=document.getElementById('item-code').value.trim();
-  var type=document.getElementById('item-type').value;
-  var qty=document.getElementById('item-qty').value;
-  if(!name||!code){toast('กรุณากรอกชื่อและรหัสสินค้า','error');return;}
-  var allItems=[...items,...officeItems];
-  var dupCheck=allItems.find(function(i){return i.code.trim().toLowerCase()===code.toLowerCase()&&i.id!==editingId;});
-  if(dupCheck){var codeEl=document.getElementById('item-code');codeEl.style.borderColor='#860001';codeEl.style.boxShadow='0 0 0 3px rgba(140,12,10,0.2)';toast('❌ รหัสซ้ำ! รหัส "'+code+'" มีอยู่แล้วในรายการ "'+dupCheck.name+'"','error');return;}
-  var unitSel=document.getElementById('item-unit-select').value;
-  var unit=unitSel==='other'?document.getElementById('item-unit-other').value.trim()||'อื่นๆ':unitSel;
-  var item={
-    id:editingId||('item_'+Date.now()),
-    name:name,code:code,type:type,
-    qty:parseInt(qty)||0,unit:unit,
-    price:document.getElementById('item-price').value,
-    budget:document.getElementById('item-budget').value,
-    receiveDate:document.getElementById('item-receive-date').value,
-    disposeDate:document.getElementById('item-dispose-date').value,
-    location:document.getElementById('item-location').value.trim(),
-    owner:document.getElementById('item-owner').value.trim(),
-    img:currentImgData,
-    status:'ใช้งานได้',
-    createdAt:new Date().toISOString()
+  var name = document.getElementById('item-name').value.trim();
+  var code = document.getElementById('item-code').value.trim();
+  var type = document.getElementById('item-type').value;
+  var qty = document.getElementById('item-qty').value;
+  
+  if (!name || !code) {
+    toast('กรุณากรอกชื่อและรหัสสินค้า', 'error');
+    return;
+  }
+  
+  // Duplicate code check across ALL tabs (inventory, office, and chemical)
+  var allItems = [...items, ...officeItems, ...(window.chemicalItems || [])];
+  var dupCheck = allItems.find(function(i){
+    return i.code.trim().toLowerCase() === code.toLowerCase() && i.id !== editingId;
+  });
+  
+  if (dupCheck) {
+    var codeEl = document.getElementById('item-code');
+    codeEl.style.borderColor = '#860001';
+    codeEl.style.boxShadow = '0 0 0 3px rgba(140,12,10,0.2)';
+    toast('❌ รหัสซ้ำ! รหัส "' + code + '" มีอยู่แล้วในรายการ "' + dupCheck.name + '"', 'error');
+    return;
+  }
+  
+  var unitSel = document.getElementById('item-unit-select').value;
+  var unit = (unitSel === 'other') ? (document.getElementById('item-unit-other').value.trim() || 'อื่นๆ') : unitSel;
+  
+  var item = {
+    id: editingId || ('item_' + Date.now()),
+    name: name,
+    code: code,
+    type: type,
+    qty: parseInt(qty) || 0,
+    unit: unit,
+    price: document.getElementById('item-price').value,
+    budget: document.getElementById('item-budget').value,
+    receiveDate: document.getElementById('item-receive-date').value,
+    disposeDate: document.getElementById('item-dispose-date').value,
+    location: document.getElementById('item-location').value.trim(),
+    owner: document.getElementById('item-owner').value.trim(),
+    img: currentImgData,
+    status: 'ใช้งานได้',
+    createdAt: new Date().toISOString()
   };
-  var tab=currentModalTab;
-  var src=tab==='office'?officeItems:items;
-  if(editingId){var idx=src.findIndex(function(i){return i.id===editingId;});item.status=src[idx].status;src[idx]=item;}
-  else{src.push(item);}
-  await saveItem_fb(item,tab);
-  renderStats(tab); renderTable(tab);
+  
+  var tab = currentModalTab;
+  var src = items;
+  if (tab === 'office') src = officeItems;
+  else if (tab === 'chemical') src = chemicalItems;
+  
+  if (editingId) {
+    var idx = src.findIndex(function(i){ return i.id === editingId; });
+    if (idx !== -1) {
+      item.status = src[idx].status; // Preserve current status on edit
+      src[idx] = item;
+    }
+  } else {
+    src.push(item);
+  }
+  
+  await saveItem_fb(item, tab);
+  if (typeof renderStats === 'function') renderStats(tab);
+  renderTable(tab);
   closeModal();
-  toast(editingId?'แก้ไขรายการสำเร็จ':'เพิ่มรายการสำเร็จ','success');
+  toast(editingId ? 'แก้ไขรายการสำเร็จ' : 'เพิ่มรายการสำเร็จ', 'success');
 }
 
-async function deleteItem(id,tab){
-  if(!confirm('ยืนยันการลบรายการนี้?'))return;
-  if(tab==='office')officeItems=officeItems.filter(function(i){return i.id!==id;});
-  else items=items.filter(function(i){return i.id!==id;});
-  await deletItem_fb(id,tab);
-  renderStats(tab); renderTable(tab);
+// ===== DELETE ITEM =====
+async function deleteItem(id, tab){
+  if (!confirm('ยืนยันการลบรายการนี้?')) return;
+  
+  if (tab === 'office') {
+    officeItems = officeItems.filter(function(i){ return i.id !== id; });
+  } else if (tab === 'chemical') {
+    chemicalItems = chemicalItems.filter(function(i){ return i.id !== id; });
+  } else {
+    items = items.filter(function(i){ return i.id !== id; });
+  }
+  
+  await deletItem_fb(id, tab);
+  if (typeof renderStats === 'function') renderStats(tab);
+  renderTable(tab);
   toast('ลบรายการแล้ว');
 }
 
