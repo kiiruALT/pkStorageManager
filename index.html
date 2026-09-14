@@ -830,14 +830,26 @@ function checkAutoDispose(){
     var oldStatus = it.status;
     var q = parseInt(it.qty) || 0;
 
-    if (it.disposeDate && it.disposeDate <= today && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
-      it.status = 'จำหน่าย';
-    } else if (q === 1 && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
-      it.status = 'ใกล้หมด';
-    } else if (q === 0 && it.status !== 'จำหน่าย' && it.status !== 'กำลังถูกยืม') {
-      it.status = 'หมดแล้ว';
-    } else if (q > 1 && (it.status === 'หมดแล้ว' || it.status === 'ใกล้หมด')) {
-      it.status = 'ใช้งานได้';
+    // List of statuses set manually by users that should NEVER be overwritten automatically
+    var manualStatuses = ['ชำรุด', 'รอจำหน่าย', 'จำหน่าย', 'ใช้งานได้'];
+
+    // If user manually set one of these statuses, skip automatic quantity status rules
+    if (manualStatuses.includes(it.status)) {
+      // Check only if it reached its dispose date
+      if (it.disposeDate && it.disposeDate <= today && it.status !== 'จำหน่าย') {
+        it.status = 'จำหน่าย';
+      }
+    } else {
+      // Automatic status checks based on quantity
+      if (it.disposeDate && it.disposeDate <= today) {
+        it.status = 'จำหน่าย';
+      } else if (q === 0) {
+        it.status = 'หมดแล้ว';
+      } else if (q === 1) {
+        it.status = 'ใกล้หมด';
+      } else if (q > 1) {
+        it.status = 'ใช้งานได้';
+      }
     }
 
     if (oldStatus !== it.status) {
@@ -862,32 +874,39 @@ function showPage(page,btn){
 }
 
 // ===== STATUS BADGE =====
-function getStatusBadge(status,tab,qty){
+function getStatusBadge(status, tab, qty) {
   var currentQty = (typeof qty === 'number') ? qty : parseInt(qty);
 
+  // Preserve automatic quantity badges
   if (currentQty === 0) return '<span class="status-badge status-out-of-stock" onclick="openStatusMenu(event,\'หมดแล้ว\',\'' + tab + '\')">🔴 หมดแล้ว</span>';
   if (currentQty === 1) return '<span class="status-badge status-low-stock" onclick="openStatusMenu(event,\'ใกล้หมด\',\'' + tab + '\')">🟠 ใกล้หมด</span>';
 
-  var map={'ใช้งานได้':'status-good',
-            'ชำรุด':'status-broken',
-            'รอจำหน่าย':'status-wait-dispose',
-            'จำหน่าย':'status-disposed',
-            'กำลังถูกยืม':'status-borrowed',
-            'เบิกแล้ว':'status-withdrawn',
-            'หมดแล้ว':'status-out-of-stock',
-            'ใกล้หมดแล้ว':'status-low-stock'
-          };
+  var map = {
+    'ใช้งานได้': 'status-good',
+    'ชำรุด': 'status-broken',
+    'รอจำหน่าย': 'status-wait-dispose',
+    'จำหน่าย': 'status-disposed',
+    'กำลังถูกยืม': 'status-borrowed',
+    'เบิกแล้ว': 'status-withdrawn',
+    'หมดแล้ว': 'status-out-of-stock',
+    'ใกล้หมด': 'status-low-stock'
+  };
 
-  var dots={'ใช้งานได้':'🟢',
-            'ชำรุด':'🔴',
-            'รอจำหน่าย':'⚪',
-            'จำหน่าย':'⚫',
-            'กำลังถูกยืม':'🔵',
-            'เบิกแล้ว':'🟣',
-            'หมดแล้ว':'🔴',
-            'ใกล้หมด':'🟠'
-          };
-  return '<span class="status-badge ' + (map[status] || 'status-good') + '" onclick="openStatusMenu(event,\'' + status + '\',\'' + tab + '\')">' + (dots[status] || '⚪') + ' ' + status + '</span>';
+  var dots = {
+    'ใช้งานได้': '🟢',
+    'ชำรุด': '🔴',
+    'รอจำหน่าย': '⚪',
+    'จำหน่าย': '⚫',
+    'กำลังถูกยืม': '🔵',
+    'เบิกแล้ว': '🟣',
+    'หมดแล้ว': '🔴',
+    'ใกล้หมด': '🟠'
+  };
+
+  var currentMap = map[status] || 'status-good';
+  var currentDot = dots[status] || '🟢';
+
+  return '<span class="status-badge ' + currentMap + '" onclick="openStatusMenu(event,\'' + status + '\',\'' + tab + '\')">' + currentDot + ' ' + status + '</span>';
 }
 
 // ===== STATS & CHART =====
@@ -1054,25 +1073,58 @@ function showItemImg(id, tab){
   document.getElementById('img-popup').classList.add('open');
 }
 
-// ===== STATUS MENU =====
-function openStatusMenu(e,currentStatus,tab){
+function openStatusMenu(e, currentStatus, tab) {
   e.stopPropagation();
-  e.preventDefault();
-  var badge=e.currentTarget;
-  var row=badge.closest('tr');
-  var id=row?row.getAttribute('data-id'):null;
-  var resolvedTab=tab||(row?row.getAttribute('data-tab'):null)||'inventory';
-  statusMenuTargetId=id;
-  statusMenuTab=resolvedTab;
-  var menu=document.getElementById('global-status-menu');
-  menu.dataset.targetId=id||'';
-  menu.dataset.targetTab=resolvedTab;
+  var badge = e.currentTarget;
+  var tr = badge.closest('tr');
+  if (!tr) return;
 
-  // First show off-screen to measure real height
-  menu.style.visibility='hidden';
-  menu.style.position='fixed';
-  menu.style.top='-9999px';
-  menu.style.left='-9999px';
+  var id = tr.dataset.id;
+  var menu = document.getElementById('global-status-menu');
+  if (!menu) return;
+
+  // Store target item ID and tab
+  statusMenuTargetId = id;
+  statusMenuTab = tab;
+  menu.dataset.targetId = id;
+
+  // Define available options based on current status
+  var availableStatuses = [];
+
+  if (currentStatus === 'ใช้งานได้' || currentStatus === 'ชำรุด' || currentStatus === 'รอจำหน่าย' || currentStatus === 'จำหน่าย') {
+    // Show only these 4 choosable options when status is ใช้งานได้ (or related manual states)
+    availableStatuses = [
+      { name: 'ใช้งานได้', dot: '🟢' },
+      { name: 'ชำรุด', dot: '🔴' },
+      { name: 'รอจำหน่าย', dot: '⚪' },
+      { name: 'จำหน่าย', dot: '⚫' }
+    ];
+  } else {
+    // Fallback menu items for other statuses (e.g., กำลังถูกยืม, เบิกแล้ว)
+    availableStatuses = [
+      { name: 'ใช้งานได้', dot: '🟢' },
+      { name: 'ชำรุด', dot: '🔴' },
+      { name: 'รอจำหน่าย', dot: '⚪' },
+      { name: 'จำหน่าย', dot: '⚫' },
+      { name: 'กำลังถูกยืม', dot: '🔵' },
+      { name: 'เบิกแล้ว', dot: '🟣' }
+    ];
+  }
+
+  // Render menu options dynamically
+  var html = availableStatuses.map(function(s) {
+    var activeClass = (s.name === currentStatus) ? ' active' : '';
+    return '<div class="status-menu-item' + activeClass + '" onclick="setStatus(\'' + s.name + '\')">'
+         + '<span>' + s.dot + '</span> ' + s.name
+         + '</div>';
+  }).join('');
+
+  menu.innerHTML = html;
+
+  // Position and open menu near the clicked badge
+  var rect = badge.getBoundingClientRect();
+  menu.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  menu.style.left = (rect.left + window.scrollX) + 'px';
   menu.classList.add('open');
 
   // Now measure and position correctly
@@ -1101,10 +1153,9 @@ function openStatusMenu(e,currentStatus,tab){
 
 function setStatus(newStatus){
   var menu = document.getElementById('global-status-menu');
-  menu.classList.remove('open');
+  if (menu) menu.classList.remove('open');
   
-  // Read id from variable OR dataset — dataset survives Firebase onSnapshot re-render
-  var id = statusMenuTargetId || menu.dataset.targetId;
+  var id = statusMenuTargetId || (menu ? menu.dataset.targetId : null);
   statusMenuTargetId = null; 
   statusMenuTab = null;
   
@@ -1113,7 +1164,7 @@ function setStatus(newStatus){
     return;
   }
   
-  // Search all three arrays by id to detect the correct tab dynamically
+  // Find item across all 3 arrays
   var item = items.find(function(i){ return i.id === id; });
   var tab = 'inventory';
   
@@ -1132,10 +1183,14 @@ function setStatus(newStatus){
     return;
   }
   
+  // Update status
   item.status = newStatus;
   
+  // Render local changes first
   if (typeof renderStats === 'function') renderStats(tab);
   renderTable(tab);
+  
+  // Save directly to Firebase
   saveItem_fb(item, tab);
   
   toast('เปลี่ยนสถานะเป็น "' + newStatus + '" แล้ว', 'success');
